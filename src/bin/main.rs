@@ -6,7 +6,7 @@ use std::process;
 fn main() {
 	println!("run at process {}", process::id());
 
-	rsig::handle(&[Signal::SIGHUP, Signal::SIGINT, Signal::SIGTERM], |signals| {
+	rsig::handle(&[Signal::HUP, Signal::INT, Signal::TERM], |signals| {
 		println!("recv {:?}", signals);
 	});
 

@@ -2,10 +2,8 @@
 extern crate lazy_static;
 
 use std::mem;
-use std::sync::atomic::AtomicUsize;
-use std::sync::atomic::Ordering;
-use std::sync::Condvar;
-use std::sync::Mutex;
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::{Condvar, Mutex};
 use std::thread;
 
 extern crate libc;
@@ -14,9 +12,9 @@ use libc::{SIGHUP, SIGINT, SIGTERM};
 
 #[derive(Copy, Clone, Debug)]
 pub enum Signal {
-	SIGHUP,
-	SIGINT,
-	SIGTERM,
+	HUP,
+	INT,
+	TERM,
 }
 
 static MASK: AtomicUsize = AtomicUsize::new(0);
@@ -29,9 +27,9 @@ pub fn handle<F>(signals: &'static [Signal], handler: F)
 where
 	F: Fn(&[Signal]) + 'static + Send,
 {
-	for &signal in signals.iter() {
+	for &s in signals.iter() {
 		unsafe {
-			set_handler(signal);
+			set_handler(s);
 		}
 	}
 
@@ -49,13 +47,13 @@ where
 			sigs.clear();
 
 			if mask & 1 != 0 {
-				sigs.push(Signal::SIGHUP);
+				sigs.push(Signal::HUP);
 			}
 			if mask & 2 != 0 {
-				sigs.push(Signal::SIGINT);
+				sigs.push(Signal::INT);
 			}
 			if mask & 1024 != 0 {
-				sigs.push(Signal::SIGTERM);
+				sigs.push(Signal::TERM);
 			}
 
 			MASK.store(0, Ordering::Relaxed);
@@ -88,9 +86,9 @@ extern "C" fn handler(sig: c_int) {
 unsafe fn set_handler(sig: Signal) {
 	signal(
 		match sig {
-			Signal::SIGHUP => SIGHUP,
-			Signal::SIGINT => SIGINT,
-			Signal::SIGTERM => SIGTERM,
+			Signal::HUP => SIGHUP,
+			Signal::INT => SIGINT,
+			Signal::TERM => SIGTERM,
 		},
 		mem::transmute::<_, sighandler_t>(handler as extern "C" fn(_)),
 	);
